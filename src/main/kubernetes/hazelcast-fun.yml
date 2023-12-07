@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: hazelcast-fun-service
+    app.dbc.dk/team: metascrum
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: nothing
+  name: hazelcast-fun-service
+spec:
+  progressDeadlineSeconds: 300
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hazelcast-fun-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: hazelcast-fun-service
+        app.dbc.dk/team: metascrum
+        app.kubernetes.io/component: service
+        app.kubernetes.io/part-of: nothing
+        network-policy-http-incoming: 'yes'
+        network-policy-http-outgoing: 'yes'
+        network-policy-postgres-outgoing: 'yes'
+        network-policy-payara: 'yes'
+    spec:
+      dnsConfig:
+        searches:
+          - dbc.dk
+      containers:
+      - env:
+        - name: TEST_DB_URL
+          value: db_user:db_password@test-db:5432/db_database
+        - name: HZ_CLUSTER_NAME
+          value: hazelcast-fun-headless.dit-jega.svc.cloud.dbc.dk
+        - name: JAVA_MAX_HEAP_SIZE
+          value: 1g
+        - name: TZ
+          value: Europe/Copenhagen
+        - name: ENABLE_REMOTE_DEBUGGING
+          value: 'yes'
+        image: docker-metascrum.artifacts.dbccloud.dk/hazelcast-fun:devel
+        name: hazelcast-fun-service
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "2Gi"
+        ports:
+        - {containerPort: 8080, protocol: TCP}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hazelcast-fun-service
+    app.dbc.dk/team: metascrum
+    app.kubernetes.io/component: service
+    app.kubernetes.io/part-of: nothing
+  name: hazelcast-fun-service
+spec:
+  ports:
+  - {name: http, port: 80, protocol: TCP, targetPort: 8080}
+  selector: {app: hazelcast-fun-service}
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hazelcast-fun-headless
+    app.dbc.dk/team: metascrum
+    app.kubernetes.io/component: service
+    app.kubernetes.io/instance: headless
+    app.kubernetes.io/name: hazelcast-fun-headless
+    app.kubernetes.io/part-of: nothing
+  name: hazelcast-fun-headless
+spec:
+  clusterIP: None
+  ports:
+    - name: hazelcast
+      port: 5701
+  selector:
+    app: hazelcast-fun-service
+  type: ClusterIP

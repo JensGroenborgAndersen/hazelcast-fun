@@ -1,0 +1,12 @@
+{
+  "appName": "HazelcastFun",
+  "jdbc": {
+    "jdbc/test": {
+      "url": "${TEST_DB_URL}"
+    }
+  },
+  "hazelcast": {
+    "clusterName": "${HZ_CLUSTER_NAME}",
+    "imports": ["file:////opt/payara6/deployments/hz-map.xml"]
+  }
+}
